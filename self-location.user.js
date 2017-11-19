@@ -128,8 +128,8 @@ SelfLocation.prototype.setupWatch = function() {
  */
 SelfLocation.prototype.receiver = function(location) {
 	this._locations.push(location);
-	console.log(
-		unixTimeToString(location.timestamp)
+	console.log('[SelfLocation] '
+		+ unixTimeToString(location.timestamp)
 		+ `; accuracy [m]: ${location.coords.accuracy}`
 		+ `; speed [m/s]: ${location.coords.speed}`
 		+ `; location: ${location.coords.latitude}, ${location.coords.longitude}`
