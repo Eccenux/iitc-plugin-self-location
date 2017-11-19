@@ -39,6 +39,7 @@ function SelfLocation() {
  */
 SelfLocation.prototype.init = function() {
 	this.setupWatch();
+	this.setupDraw();
 };
 
 /**
@@ -117,23 +118,68 @@ SelfLocation.prototype._drawLayer = null;
 /**
  * Setup layer for the agent's location.
  */
-SelfLocation.prototype.setupWatch = function() {
+SelfLocation.prototype.setupDraw = function() {
 	this._drawLayer = new L.LayerGroup();
+	window.addLayerGroup('Agent (self) location', this._drawLayer, true);
 };
 
 /**
  * Location receiver.
  *
+ * TODO:
+ * <li> Add current postion to layer.
+ * <li> If new postion is less accurate and speed is 0, then don't show it.
+ * <li> Add locations to an array and render locations as a polyline.
+ * <li> Filter locations based on `accuracyMinimum` and `speedMinimum`.
+ * <li> Decrease `accuracyMinimum` if there are too many points.
+ * <li> Increase `speedMinimum` if there are too many points.
+ * <li> Remove old points based on `ageMaximum`.
+ *
  * @param {Position} location
  */
 SelfLocation.prototype.receiver = function(location) {
 	this._locations.push(location);
+	this.addCurrentLocation(location);
+
 	console.log('[SelfLocation] '
 		+ unixTimeToString(location.timestamp)
 		+ `; accuracy [m]: ${location.coords.accuracy}`
 		+ `; speed [m/s]: ${location.coords.speed}`
 		+ `; location: ${location.coords.latitude}, ${location.coords.longitude}`
 	);
+};
+
+/**
+ * Shows current location on the map.
+ * @param {Position} location
+ * @returns {Boolean} true If location was actually added.
+ */
+SelfLocation.prototype.addCurrentLocation = function(location) {
+	// basic filter
+	if (location.coords.accuracy > this.filterConfig.accuracyMinimum) {
+		return false;
+	}
+	// remove previous
+	if (this._prevMarker) {
+		this._drawLayer.removeLayer(this._prevMarker);
+	}
+	// add new
+	var ll = [location.coords.latitude, location.coords.longitude];
+	var marker = L.circleMarker(ll,
+		{
+			radius: 5,
+			weight: 3,
+			opacity: 1,
+			color: '#404000',
+			fill: false,
+			dashArray: null,
+			clickable: false
+		}
+	);
+	this._drawLayer.addLayer(marker);
+	// remember added
+	this._prevMarker = marker;
+	return true;
 };
 
 /**
