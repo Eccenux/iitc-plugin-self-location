@@ -155,8 +155,9 @@ SelfLocation.prototype.receiver = function(location) {
  * @returns {Boolean} true If location was actually added.
  */
 SelfLocation.prototype.addCurrentLocation = function(location) {
+	var accuracy = location.coords.accuracy;
 	// basic filter
-	if (location.coords.accuracy > this.filterConfig.accuracyMinimum) {
+	if (accuracy > this.filterConfig.accuracyMinimum) {
 		//return false;
 	}
 	// remove previous
@@ -169,7 +170,7 @@ SelfLocation.prototype.addCurrentLocation = function(location) {
 	var marker = L.circleMarker(ll,
 		{
 			// in meters
-			radius: (location.coords.accuracy > 50 ? 50 : location.coords.accuracy),
+			radius: (accuracy > 50 ? 50 : (accuracy < 5 ? 5 : accuracy)),
 			weight: 3,
 			opacity: 1,
 			color: 'red',
