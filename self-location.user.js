@@ -150,6 +150,30 @@ SelfLocation.prototype.receiver = function(location) {
 };
 
 /**
+ * Dump locations (after testing).
+ *
+ * Dumping from console (e.g. FF WebIDE):
+ * copy(plugin.selfLocation.dump());
+ */
+SelfLocation.prototype.dump = function() {
+	// dump-able locations array
+	var locations = this._locations.map(function(location){
+		return {
+				ll: {
+					latitude: location.coords.latitude,
+					longitude: location.coords.longitude
+				},
+				accuracy: location.coords.accuracy,
+				speed: location.coords.speed,
+				timestamp: location.timestamp
+		};
+	});
+
+	return JSON.stringify(locations);
+};
+
+
+/**
  * Shows current location on the map.
  * @param {Position} location
  * @returns {Boolean} true If location was actually added.
