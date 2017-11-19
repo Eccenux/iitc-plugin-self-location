@@ -168,7 +168,8 @@ SelfLocation.prototype.addCurrentLocation = function(location) {
 	var ll = [location.coords.latitude, location.coords.longitude];
 	var marker = L.circleMarker(ll,
 		{
-			radius: 5,
+			// in meters
+			radius: (location.coords.accuracy > 50 ? 50 : location.coords.accuracy),
 			weight: 3,
 			opacity: 1,
 			color: 'red',
