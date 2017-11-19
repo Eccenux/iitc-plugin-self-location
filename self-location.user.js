@@ -70,6 +70,22 @@ function LOGwarn() {
 SelfLocation.prototype._locations = [];
 
 /**
+ * Configuration of location filtering.
+ *
+ * Filters only apply to polyline.
+ *
+ * Accuracy experiments:
+ * <li>PC at home on FF: 1638. Note! Speed was NaN!
+ * <li>Phone at home on FF: 20-25 meters on first measurement. Sometimes above 100 m.
+ *	Actual location was really somewhere in that range.
+ */
+SelfLocation.prototype.filterConfig = {
+	accuracyMinimum: 100,	// [m]
+	speedMinimum: 0.2,	// [m/s] 1 km/h ~= 0.2778 m/s
+	ageMaximum: 60		// [minutes]
+};
+
+/**
  * Last (previous) location registered.
  * 
  * @type Position
@@ -111,15 +127,12 @@ SelfLocation.prototype.setupWatch = function() {
  * @param {Position} location
  */
 SelfLocation.prototype.receiver = function(location) {
-	LOG({
-		ll: {
-			latitude: location.coords.latitude,
-			longitude: location.coords.longitude
-		},
-		accuracy: location.coords.accuracy,
-		speed: location.coords.speed,
-		timestamp: location.timestamp
-	});
+	LOG (
+		unixTimeToString(location.timestamp),
+		`accuracy [m]: ${location.coords.accuracy}`,
+		`speed [m/s]: ${location.coords.speed}`,
+		`ll: ${location.coords.latitude}, ${location.coords.longitude}`
+	);
 };
 
 /**
