@@ -127,11 +127,12 @@ SelfLocation.prototype.setupWatch = function() {
  * @param {Position} location
  */
 SelfLocation.prototype.receiver = function(location) {
-	LOG (
-		unixTimeToString(location.timestamp),
-		`accuracy [m]: ${location.coords.accuracy}`,
-		`speed [m/s]: ${location.coords.speed}`,
-		`ll: ${location.coords.latitude}, ${location.coords.longitude}`
+	this._locations.push(location);
+	console.log(
+		unixTimeToString(location.timestamp)
+		+ `; accuracy [m]: ${location.coords.accuracy}`
+		+ `; speed [m/s]: ${location.coords.speed}`
+		+ `; location: ${location.coords.latitude}, ${location.coords.longitude}`
 	);
 };
 
