@@ -157,11 +157,12 @@ SelfLocation.prototype.receiver = function(location) {
 SelfLocation.prototype.addCurrentLocation = function(location) {
 	// basic filter
 	if (location.coords.accuracy > this.filterConfig.accuracyMinimum) {
-		return false;
+		//return false;
 	}
 	// remove previous
 	if (this._prevMarker) {
-		this._drawLayer.removeLayer(this._prevMarker);
+		//this._drawLayer.removeLayer(this._prevMarker);
+		this._prevMarker.setStyle({opacity:0.2});
 	}
 	// add new
 	var ll = [location.coords.latitude, location.coords.longitude];
@@ -170,8 +171,8 @@ SelfLocation.prototype.addCurrentLocation = function(location) {
 			radius: 5,
 			weight: 3,
 			opacity: 1,
-			color: '#404000',
-			fill: false,
+			color: 'red',
+			fill: 'red',
 			dashArray: null,
 			clickable: false
 		}
