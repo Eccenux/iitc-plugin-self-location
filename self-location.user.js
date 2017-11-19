@@ -2,7 +2,7 @@
 // @id             iitc-plugin-self-location@eccenux
 // @name           IITC plugin: Self location
 // @category       Misc
-// @version        0.1.1
+// @version        0.0.1
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @description    [0.0.1] Self location tracker. Your position on the map. Obviously works best on a mobile device.
 // @include        https://*.ingress.com/intel*
@@ -118,7 +118,7 @@ SelfLocation.prototype.receiver = function(location) {
 		},
 		accuracy: location.coords.accuracy,
 		speed: location.coords.speed,
-		timestamp: location.timestamp,
+		timestamp: location.timestamp
 	});
 };
 
