@@ -1,5 +1,7 @@
 # IITC plugin: Self location
 
+NOTE! This plugin is experimental. DO NOT USE. Yet.
+
 Self location tracker. Obviously works best on a mobile device.
 
 Basically this plugin shows your position on the map. It can also show your tracks on the map when you move. This should allow you to see where you are heading even if your compass doesn't work well (or doesn't work at all).
