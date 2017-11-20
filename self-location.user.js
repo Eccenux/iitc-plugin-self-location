@@ -250,10 +250,9 @@ SelfLocation.prototype.updateTrace = function(location) {
 SelfLocation.prototype.createMarker = function(location, isCurrent) {
 	var accuracy = location.coords.accuracy;
 	var ll = [location.coords.latitude, location.coords.longitude];
-	return L.circle(ll,
+	var radius = (accuracy > 50 ? 50 : (accuracy < 5 ? 5 : accuracy)); // in meters
+	return L.circle(ll, radius
 		{
-			// in meters
-			radius: (accuracy > 50 ? 50 : (accuracy < 5 ? 5 : accuracy)),
 			weight: 3,
 			opacity: isCurrent ? 1 : 0.2,
 			color: isCurrent ? 'gold' : 'red',
