@@ -2,9 +2,9 @@
 // @id             iitc-plugin-self-location@eccenux
 // @name           IITC plugin: Self location
 // @category       Misc
-// @version        0.0.1
+// @version        0.0.2
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    [0.0.1] Self location tracker. Your position on the map. Obviously works best on a mobile device.
+// @description    [0.0.2] Self location tracker. Your position on the map. Obviously works best on a mobile device.
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
@@ -67,8 +67,28 @@ function LOGwarn() {
  * and might provide too much load on user's browser (and device).
  * So points too close of previous point are not added to the map. (speed close to 0?)
  * Also points that get too far from current postion will be removed. (or maybe filter by time? e.g. ~30min)
+ *
+ * Note that locations are of type `Position`:
+ * https://developer.mozilla.org/en-US/docs/Web/API/Position
+ *
+ * Most important properties:
+ * <li>coords.latitude, coords.longitude -- [decimal degrees] actual position.
+ * <li>coords.accuracy -- [meters] strictly positive double representing the accuracy, with a 95% confidence level, of the Coordinates.latitude and Coordinates.longitude properties expressed in meters
+ * <li>coords.speed -- [m/s] the velocity of the device (can be null!).
+ * <li>timestamp -- [ms] date and time of the creation of the Position.
  */
 SelfLocation.prototype._locations = [];
+
+/**
+ * If true then `_locations` history will be kept intact (until page reload).
+ * This should probably only be used for debugging.
+ */
+SelfLocation.prototype._keepAllLocationsHistory = true;
+
+/**
+ * Array of markers that form the player's trace.
+ */
+SelfLocation.prototype._traceMarkers = [];
 
 /**
  * Configuration of location filtering.
@@ -81,24 +101,11 @@ SelfLocation.prototype._locations = [];
  *	Actual location was really somewhere in that range.
  */
 SelfLocation.prototype.filterConfig = {
-	accuracyMinimum: 100,	// [m]
+	accuracyMinimum: 30,// [m]
 	speedMinimum: 0.2,	// [m/s] 1 km/h ~= 0.2778 m/s
-	ageMaximum: 60		// [minutes]
+	ageMaximum: 60,		// [minutes]
+	lengthMaximum: 200	// max locations quee
 };
-
-/**
- * Last (previous) location registered.
- * 
- * @type Position
- * https://developer.mozilla.org/en-US/docs/Web/API/Position
- * 
- * Most important:
- * <li>coords.latitude, coords.longitude -- [decimal degrees] actual position.
- * <li>coords.accuracy -- [meters] strictly positive double representing the accuracy, with a 95% confidence level, of the Coordinates.latitude and Coordinates.longitude properties expressed in meters
- * <li>coords.speed -- [m/s] the velocity of the device (can be null!).
- * <li>timestamp -- [ms] date and time of the creation of the Position.
- */
-SelfLocation.prototype._lastLocation = null;
 
 /**
  * Location watch ID.
@@ -126,21 +133,21 @@ SelfLocation.prototype.setupDraw = function() {
 /**
  * Location receiver.
  *
- * TODO:
- * <li> Add current postion to layer.
- * <li> If new postion is less accurate and speed is 0, then don't show it.
- * <li> Add locations to an array and render locations as a polyline.
- * <li> Filter locations based on `accuracyMinimum` and `speedMinimum`.
- * <li> Decrease `accuracyMinimum` if there are too many points.
- * <li> Increase `speedMinimum` if there are too many points.
- * <li> Remove old points based on `ageMaximum`.
- *
  * @param {Position} location
  */
 SelfLocation.prototype.receiver = function(location) {
-	this._locations.push(location);
+	if (this._keepAllLocationsHistory) {
+		this._locations.push(location);
+	}
+	this.updateTrace(location);
 	this.addCurrentLocation(location);
+};
 
+/**
+ * Show location in debug console.
+ * @param {Position} location
+ */
+SelfLocation.prototype.logLocation = function(location) {
 	console.log('[SelfLocation] '
 		+ unixTimeToString(location.timestamp)
 		+ `; accuracy [m]: ${location.coords.accuracy}`
@@ -172,41 +179,89 @@ SelfLocation.prototype.dump = function() {
 	return JSON.stringify(locations);
 };
 
+/**
+ * Should location be left as a trace.
+ * 
+ * @param {Position} location
+ * @returns {Boolean} true If location should not be filtered out.
+ */
+SelfLocation.prototype.shouldAddAsTrace = function(location) {
+	if (location.coords.accuracy > this.filterConfig.accuracyMinimum) {
+		return false;
+	}
+	if (location.coords.speed < this.filterConfig.speedMinimum) {
+		return false;
+	}
+	return true;
+};
 
 /**
  * Shows current location on the map.
  * @param {Position} location
- * @returns {Boolean} true If location was actually added.
  */
 SelfLocation.prototype.addCurrentLocation = function(location) {
-	var accuracy = location.coords.accuracy;
-	// basic filter
-	if (accuracy > this.filterConfig.accuracyMinimum) {
-		//return false;
-	}
 	// remove previous
 	if (this._prevMarker) {
-		//this._drawLayer.removeLayer(this._prevMarker);
-		this._prevMarker.setStyle({opacity:0.2});
+		this._drawLayer.removeLayer(this._prevMarker);
+		this._prevMarker = null;
 	}
-	// add new
+	// add current position marker
+	var marker = this.createMarker(location, true);
+	this._drawLayer.addLayer(marker);
+	// remember added
+	this._prevMarker = marker;
+};
+
+/**
+ * Adds location to future trace and updates trace.
+ *
+ * Note that this only adds previous location so that only one marker is added for current location.
+ *
+ * @param {Position} location
+ */
+SelfLocation.prototype.updateTrace = function(location) {
+	// add previous location to trace
+	if (this._prevLocationToTrace) {
+		// add trace marker
+		var marker = this.createMarker(this._prevLocationToTrace, false);
+		this._drawLayer.addLayer(marker);
+		this._prevLocationToTrace = null;
+		// remember added
+		this._traceMarkers.push(marker);
+	}
+	// remove old if required
+	if (this._traceMarkers.length > this.filterConfig.lengthMaximum) {
+		var oldMarker = this._traceMarkers.shift();
+		this._drawLayer.removeLayer(oldMarker);
+	}
+	// add as trace later
+	if (this.shouldAddAsTrace(location)) {
+		this._prevLocationToTrace = location;
+	}
+};
+
+/**
+ * Create position marker.
+ * 
+ * @param {Position} location
+ * @param {Boolean} isCurrent Is the location a current location (determines marker style).
+ * @returns {L.CircleMarker}
+ */
+SelfLocation.prototype.createMarker = function(location, isCurrent) {
+	var accuracy = location.coords.accuracy;
 	var ll = [location.coords.latitude, location.coords.longitude];
-	var marker = L.circleMarker(ll,
+	return L.circleMarker(ll,
 		{
 			// in meters
 			radius: (accuracy > 50 ? 50 : (accuracy < 5 ? 5 : accuracy)),
 			weight: 3,
-			opacity: 1,
-			color: 'red',
+			opacity: isCurrent ? 1 : 0.2,
+			color: isCurrent ? 'gold' : 'red',
 			fill: 'red',
 			dashArray: null,
 			clickable: false
 		}
 	);
-	this._drawLayer.addLayer(marker);
-	// remember added
-	this._prevMarker = marker;
-	return true;
 };
 
 /**
