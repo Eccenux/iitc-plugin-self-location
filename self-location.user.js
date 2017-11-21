@@ -31,8 +31,7 @@ if(typeof window.plugin !== 'function') window.plugin = function() {};
  * Will become `window.plugin.selfLocation` singleton.
  */
 function SelfLocation() {
-
-};
+}
 
 /**
  * Initial initialization of the plugin.
@@ -251,7 +250,7 @@ SelfLocation.prototype.createMarker = function(location, isCurrent) {
 	var accuracy = location.coords.accuracy;
 	var ll = [location.coords.latitude, location.coords.longitude];
 	var radius = (accuracy > 50 ? 50 : (accuracy < 5 ? 5 : accuracy)); // in meters
-	return L.circle(ll, radius
+	return L.circle(ll, radius,
 		{
 			weight: 3,
 			opacity: isCurrent ? 1 : 0.2,
