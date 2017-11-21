@@ -252,11 +252,11 @@ SelfLocation.prototype.createMarker = function(location, isCurrent) {
 	var radius = (accuracy > 50 ? 50 : (accuracy < 5 ? 5 : accuracy)); // in meters
 	return L.circle(ll, radius,
 		{
-			weight: 3,
+			weight: 5,
 			opacity: isCurrent ? 1 : 0.2,
 			color: isCurrent ? 'gold' : 'red',
 			fill: true,
-			fillColor: 'red',
+			fillColor: (PLAYER.team === 'ENLIGHTENED') ? 'green' : 'blue',
 			dashArray: null,
 			clickable: false
 		}
