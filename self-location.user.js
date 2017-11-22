@@ -2,9 +2,9 @@
 // @id             iitc-plugin-self-location@eccenux
 // @name           IITC plugin: Self location
 // @category       Misc
-// @version        0.0.4
+// @version        0.0.5
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    [0.0.4] Self location tracker. Your position on the map. Obviously works best on a mobile device.
+// @description    [0.0.5] Self location tracker. Your position on the map. Obviously works best on a mobile device.
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
@@ -260,7 +260,7 @@ SelfLocation.prototype.createMarker = function(location, isCurrent) {
 	}
 	return L.circleMarker(ll,
 		{
-			radius: radius,	// in pixels; keep trace the same radius
+			radius: radius,	// in pixels
 			weight: 5,
 			opacity: isCurrent ? 1 : 0.2,
 			color: isCurrent ? 'gold' : 'red',
