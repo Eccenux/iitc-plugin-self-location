@@ -244,19 +244,29 @@ SelfLocation.prototype.updateTrace = function(location) {
  * 
  * @param {Position} location
  * @param {Boolean} isCurrent Is the location a current location (determines marker style).
- * @returns {L.Circle}
+ * @returns {L.CircleMarker}
  */
 SelfLocation.prototype.createMarker = function(location, isCurrent) {
 	var accuracy = location.coords.accuracy;
 	var ll = [location.coords.latitude, location.coords.longitude];
-	var radius = (accuracy > 50 ? 50 : (accuracy < 5 ? 5 : accuracy)); // in meters
-	return L.circle(ll, radius,
+	// current
+	if (isCurrent) {
+		var radius = (accuracy > 50 ? 50 : (accuracy < 5 ? 5 : accuracy)); // in meters
+		var fillColor = (PLAYER.team === 'ENLIGHTENED') ? 'green' : 'blue';
+	// trace
+	} else {
+		var radius = 5;
+		var fillColor = 'red';
+	}
+	return L.circleMarker(ll,
 		{
+			radius: radius,	// in pixels; keep trace the same radius
 			weight: 5,
 			opacity: isCurrent ? 1 : 0.2,
 			color: isCurrent ? 'gold' : 'red',
 			fill: true,
-			fillColor: (PLAYER.team === 'ENLIGHTENED') ? 'green' : 'blue',
+			fillColor: fillColor,
+			fillOpacity: isCurrent ? 0.2 : 0.1,
 			dashArray: null,
 			clickable: false
 		}
