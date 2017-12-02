@@ -25,7 +25,7 @@ Note that your location is on a separate layer. So you can temporarily hide your
 
 To go to your current location tap on the location button (left sidebar `⌖`). This will put you in the middle of the map.
 
-To start a constant tracing mode tap and hold the button (about 2-3 seconds). When your location changes the map will move with you. Depending on your zoom level and location accuracy this might be every few meters or more.
+[TODO] To start a constant tracing mode tap and hold the button (about 2 seconds). When your location changes the map will move with you. Depending on your zoom level and location accuracy this might be every few meters or more.
 
 The location button icon will change depending on your current mode. It will also change briefly when clicked. 
 
