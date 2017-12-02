@@ -2,9 +2,9 @@
 // @id             iitc-plugin-self-location@eccenux
 // @name           IITC plugin: Self location
 // @category       Misc
-// @version        0.0.5
+// @version        0.1.0
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    [0.0.5] Self location tracker. Your position on the map. Obviously works best on a mobile device.
+// @description    [0.1.0] Self location tracker. Your position on the map. Obviously works best on a mobile device.
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
@@ -39,6 +39,7 @@ function SelfLocation() {
 SelfLocation.prototype.init = function() {
 	this.setupWatch();
 	this.setupDraw();
+	this.setupContent();
 };
 
 /**
@@ -99,11 +100,14 @@ SelfLocation.prototype._traceMarkers = [];
  * <li>Phone at home on FF: 20-25 meters on first measurement. Sometimes above 100 m.
  *	Actual location was really somewhere in that range.
  */
-SelfLocation.prototype.filterConfig = {
+SelfLocation.prototype.config = {
+	longpress : 2000,	// [ms] how long is a long press (click/tap)
+	filter : {
 	accuracyMinimum: 30,// [m]
 	speedMinimum: 0.2,	// [m/s] 1 km/h ~= 0.2778 m/s
 	ageMaximum: 60,		// [minutes]
 	lengthMaximum: 200	// max locations quee
+	}
 };
 
 /**
@@ -127,6 +131,62 @@ SelfLocation.prototype._drawLayer = null;
 SelfLocation.prototype.setupDraw = function() {
 	this._drawLayer = new L.LayerGroup();
 	window.addLayerGroup('Agent (self) location', this._drawLayer, true);
+};
+
+/**
+ * Setup always visible content.
+ */
+SelfLocation.prototype.setupContent = function() {
+	var states = {
+		normal: '⌖',
+		clicked: '⊕',
+		trace: '🎯'
+	};
+	var clickedTimerId = null;
+	var clickedTimeout = 3000;
+
+	// leaflet (sidebar buttons)
+	$('.leaflet-control-container .leaflet-top.leaflet-left').append(`
+		<div class="leaflet-control-selfLocation leaflet-bar leaflet-control">
+			<a href="#" id="selfLocation-goto-button" data-state="normal" title="go to current location">${states.normal}</a>
+		</div>
+	`);
+
+	var $gotoButton = $('#selfLocation-goto-button');
+	// standard click
+	$gotoButton.click(function(event) {
+		event.preventDefault();
+		console.log("single click");
+		// clicked feedback
+		$gotoButton.text(states.clicked);
+		// revert to normal
+		if (clickedTimerId) {
+			clearTimeout(clickedTimerId);
+		}
+		clickedTimerId = setTimeout(function(){
+			console.log("timeout");
+			if ($gotoButton.attr('data-state') === 'normal') {
+				console.log("reveting to:", states.normal);
+				$gotoButton.text(states.normal);
+			}
+		}, clickedTimeout);
+	});
+	// longpress
+	var longpress = this.config.longpress;
+	var start = 0;
+	$gotoButton.on('touchstart', function() {
+		start = new Date().getTime();
+		console.log('touchstart');   
+	});
+	$gotoButton.on('touchend', function( e ) {
+		if (new Date().getTime() >= (start + longpress)) {
+			alert('long press!');
+		} else {
+			console.log('short press!');   
+		}
+	} );
+	
+	this.$gotoButton = $gotoButton;
 };
 
 /**
@@ -185,10 +245,10 @@ SelfLocation.prototype.dump = function() {
  * @returns {Boolean} true If location should not be filtered out.
  */
 SelfLocation.prototype.shouldAddAsTrace = function(location) {
-	if (location.coords.accuracy > this.filterConfig.accuracyMinimum) {
+	if (location.coords.accuracy > this.config.filter.accuracyMinimum) {
 		return false;
 	}
-	if (location.coords.speed < this.filterConfig.speedMinimum) {
+	if (location.coords.speed < this.config.filter.speedMinimum) {
 		return false;
 	}
 	return true;
@@ -229,7 +289,7 @@ SelfLocation.prototype.updateTrace = function(location) {
 		this._traceMarkers.push(marker);
 	}
 	// remove old if required
-	if (this._traceMarkers.length > this.filterConfig.lengthMaximum) {
+	if (this._traceMarkers.length > this.config.filter.lengthMaximum) {
 		var oldMarker = this._traceMarkers.shift();
 		this._drawLayer.removeLayer(oldMarker);
 	}
