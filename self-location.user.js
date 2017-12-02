@@ -101,12 +101,20 @@ SelfLocation.prototype._traceMarkers = [];
  *	Actual location was really somewhere in that range.
  */
 SelfLocation.prototype.config = {
-	longpress : 1500,	// [ms] how long is a long press (click/tap)
 	filter : {
-	accuracyMinimum: 30,// [m]
-	speedMinimum: 0.2,	// [m/s] 1 km/h ~= 0.2778 m/s
-	ageMaximum: 60,		// [minutes]
-	lengthMaximum: 200	// max locations quee
+		accuracyMinimum: 30,// [m]
+		speedMinimum: 0.2,	// [m/s] 1 km/h ~= 0.2778 m/s
+		ageMaximum: 60,		// [minutes]
+		lengthMaximum: 200	// max locations quee
+	},
+	goto : {
+		longpress : 1000,	// [ms] how long is a long press (click/tap)
+		clickedTimeout : 3000,
+		states : {
+			normal: '⌖',
+			clicked: '⊕',
+			trace: '🎯'
+		}
 	}
 };
 
@@ -137,23 +145,26 @@ SelfLocation.prototype.setupDraw = function() {
  * Setup always visible content.
  */
 SelfLocation.prototype.setupContent = function() {
-	var states = {
-		normal: '⌖',
-		clicked: '⊕',
-		trace: '🎯'
-	};
-	var clickedTimerId = null;
-	var clickedTimeout = 3000;
-
 	// leaflet (sidebar buttons)
 	$('.leaflet-control-container .leaflet-top.leaflet-left').append(`
 		<div class="leaflet-control-selfLocation leaflet-bar leaflet-control">
-			<a href="#" id="selfLocation-goto-button" data-state="normal" title="go to current location">${states.normal}</a>
+			<a href="#" id="selfLocation-goto-button" data-state="normal" title="go to current location">${this.config.gotoStates.normal}</a>
 		</div>
 	`);
 
 	var $gotoButton = $('#selfLocation-goto-button');
+	this.preapreGotoEvents($gotoButton);
+}
+
+/**
+ * Prepare go-to location button.
+ */
+SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
+	var states = this.config.goto.states;
+
 	// standard click
+	var clickedTimerId = null;
+	var clickedTimeout = this.config.goto.clickedTimeout;
 	$gotoButton.click(function(event) {
 		event.preventDefault();
 		console.log("single click");
@@ -171,8 +182,9 @@ SelfLocation.prototype.setupContent = function() {
 			}
 		}, clickedTimeout);
 	});
+
 	// longpress
-	var longpress = this.config.longpress;
+	var longpress = this.config.goto.longpress;
 	var start = 0;
 	$gotoButton.on('touchstart', function() {
 		start = new Date().getTime();
