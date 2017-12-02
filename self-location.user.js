@@ -101,7 +101,7 @@ SelfLocation.prototype._traceMarkers = [];
  *	Actual location was really somewhere in that range.
  */
 SelfLocation.prototype.config = {
-	longpress : 2000,	// [ms] how long is a long press (click/tap)
+	longpress : 1500,	// [ms] how long is a long press (click/tap)
 	filter : {
 	accuracyMinimum: 30,// [m]
 	speedMinimum: 0.2,	// [m/s] 1 km/h ~= 0.2778 m/s
@@ -176,15 +176,15 @@ SelfLocation.prototype.setupContent = function() {
 	var start = 0;
 	$gotoButton.on('touchstart', function() {
 		start = new Date().getTime();
-		console.log('touchstart');   
+		console.log('touchstart');
 	});
-	$gotoButton.on('touchend', function( e ) {
-		if (new Date().getTime() >= (start + longpress)) {
-			alert('long press!');
-		} else {
-			console.log('short press!');   
+	$gotoButton.on('touchend', function() {
+		var deltaT = new Date().getTime() - start;
+		console.log('touchend', deltaT);
+		if (deltaT >= longpress) {
+			alert('long press');
 		}
-	} );
+	});
 	
 	this.$gotoButton = $gotoButton;
 };
