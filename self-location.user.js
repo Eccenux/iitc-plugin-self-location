@@ -148,7 +148,7 @@ SelfLocation.prototype.setupContent = function() {
 	// leaflet (sidebar buttons)
 	$('.leaflet-control-container .leaflet-top.leaflet-left').append(`
 		<div class="leaflet-control-selfLocation leaflet-bar leaflet-control">
-			<a href="#" id="selfLocation-goto-button" data-state="normal" title="go to current location">${this.config.gotoStates.normal}</a>
+			<a href="#" id="selfLocation-goto-button" data-state="normal" title="go to current location">${this.config.goto.states.normal}</a>
 		</div>
 	`);
 
@@ -160,6 +160,7 @@ SelfLocation.prototype.setupContent = function() {
  * Prepare go-to location button.
  */
 SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
+	var me = this;	
 	var states = this.config.goto.states;
 
 	// standard click
@@ -167,7 +168,7 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 	var clickedTimeout = this.config.goto.clickedTimeout;
 	$gotoButton.click(function(event) {
 		event.preventDefault();
-		console.log("single click");
+		me.centerMap();
 		// clicked feedback
 		$gotoButton.text(states.clicked);
 		// revert to normal
@@ -175,9 +176,7 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 			clearTimeout(clickedTimerId);
 		}
 		clickedTimerId = setTimeout(function(){
-			console.log("timeout");
 			if ($gotoButton.attr('data-state') === 'normal') {
-				console.log("reveting to:", states.normal);
 				$gotoButton.text(states.normal);
 			}
 		}, clickedTimeout);
@@ -188,11 +187,11 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 	var start = 0;
 	$gotoButton.on('touchstart', function() {
 		start = new Date().getTime();
-		console.log('touchstart');
+		LOG('touchstart');
 	});
 	$gotoButton.on('touchend', function() {
 		var deltaT = new Date().getTime() - start;
-		console.log('touchend', deltaT);
+		LOG('touchend', deltaT);
 		if (deltaT >= longpress) {
 			alert('long press');
 		}
@@ -202,11 +201,40 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 };
 
 /**
+ * If true then after reading next location the map will be centered.
+ */
+SelfLocation.prototype._centerOnNextLocation = false;
+
+/**
+ * Center map on current (next) location.
+ */
+SelfLocation.prototype.centerMap = function(location) {
+	LOG('centerMap: ', location);
+	if (!location) {
+		if (this._locations.length) {
+			location = this._locations[this._locations.length-1];
+			LOG('location from history: ', location);
+		}
+	}
+	if (location) {
+		var ll = [location.coords.latitude, location.coords.longitude];
+		window.map.setView(ll, window.map.getZoom());
+	} else {
+		LOG('center on next location');
+		this._centerOnNextLocation = true;
+	}
+}	
+
+/**
  * Location receiver.
  *
  * @param {Position} location
  */
 SelfLocation.prototype.receiver = function(location) {
+	if (this._centerOnNextLocation) {
+		this.centerMap(location);
+		this._centerOnNextLocation = false;
+	}
 	if (this._keepAllLocationsHistory) {
 		this._locations.push(location);
 	}
