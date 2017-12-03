@@ -2,9 +2,9 @@
 // @id             iitc-plugin-self-location@eccenux
 // @name           IITC plugin: Self location
 // @category       Misc
-// @version        0.1.1
+// @version        0.1.2
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    [0.1.1] Self location tracker. Your position on the map. Obviously works best on a mobile device.
+// @description    [0.1.2] Self location tracker. Your position on the map. Obviously works best on a mobile device.
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
@@ -113,7 +113,7 @@ SelfLocation.prototype.config = {
 		states : {
 			normal: '⌖',
 			clicked: '⊕',
-			trace: '🎯'
+			follow: '🎯'
 		}
 	}
 };
@@ -154,13 +154,14 @@ SelfLocation.prototype.setupContent = function() {
 
 	var $gotoButton = $('#selfLocation-goto-button');
 	this.preapreGotoEvents($gotoButton);
-}
+};
 
 /**
  * Prepare go-to location button.
+ * @param {jQuery} $gotoButton
  */
 SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
-	var me = this;	
+	var me = this;
 	var states = this.config.goto.states;
 
 	// standard click
@@ -168,7 +169,18 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 	var clickedTimeout = this.config.goto.clickedTimeout;
 	$gotoButton.click(function(event) {
 		event.preventDefault();
+
+		// stop following location
+		if ($gotoButton.attr('data-state') === 'follow') {
+			$gotoButton.text(states.normal);
+			$gotoButton.attr('data-state', 'normal');
+			this.followEnd();
+			return;
+		}
+
+		// center map
 		me.centerMap();
+		
 		// clicked feedback
 		$gotoButton.text(states.clicked);
 		// revert to normal
@@ -193,7 +205,12 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 		var deltaT = new Date().getTime() - start;
 		LOG('touchend', deltaT);
 		if (deltaT >= longpress) {
-			alert('long press');
+			// start following location
+			if ($gotoButton.attr('data-state') !== 'follow') {
+				$gotoButton.text(states.follow);
+				$gotoButton.attr('data-state', 'follow');
+				this.followStart();
+			}
 		}
 	});
 	
@@ -207,6 +224,7 @@ SelfLocation.prototype._centerOnNextLocation = false;
 
 /**
  * Center map on current (next) location.
+ * @param {Position|undefined} location If not provided then will attempt to read from history.
  */
 SelfLocation.prototype.centerMap = function(location) {
 	LOG('centerMap: ', location);
@@ -223,7 +241,40 @@ SelfLocation.prototype.centerMap = function(location) {
 		LOG('center on next location');
 		this._centerOnNextLocation = true;
 	}
-}	
+};
+
+/**
+ * If true then constantly follow user location.
+ */
+SelfLocation.prototype._followLocation = false;
+
+/**
+ * Start following user location.
+ */
+SelfLocation.prototype.followStart = function() {
+	this._followLocation = true;
+};
+
+/**
+ * Stop following user location.
+ */
+SelfLocation.prototype.followEnd = function() {
+	this._followLocation = false;
+};
+
+/**
+ * Start following user location.
+ * @param {Position} location
+ */
+SelfLocation.prototype.follow = function(location) {
+	if (!this._followLocation) {
+		return;
+	}
+	// do same filtering as for trace (at least for now)
+	if (this.shouldAddAsTrace(location)) {
+		this.centerMap(location);
+	}
+};
 
 /**
  * Location receiver.
@@ -240,6 +291,7 @@ SelfLocation.prototype.receiver = function(location) {
 	}
 	this.updateTrace(location);
 	this.addCurrentLocation(location);
+	this.follow(location);
 };
 
 /**
