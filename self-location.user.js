@@ -2,9 +2,9 @@
 // @id             iitc-plugin-self-location@eccenux
 // @name           IITC plugin: Self location
 // @category       Misc
-// @version        0.1.3
+// @version        0.1.4
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    [0.1.3] Self location tracker. Your position on the map. Obviously works best on a mobile device.
+// @description    [0.1.4] Self location tracker. Your position on the map. Obviously works best on a mobile device.
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
@@ -277,12 +277,13 @@ SelfLocation.prototype.follow = function(location) {
 		return;
 	}
 	// do same filtering as for trace (at least for now)
+	LOG('follow: ', location);
 	if (this.shouldAddAsTrace(location)) {
 		var now = new Date().getTime();
 		var deltaT = (now - this._followPreviousTime) / 1000;
-		console.log('deltaT: ', deltaT);
+		LOG('deltaT: ', deltaT);
 		if (deltaT > this.config.goto.minInterval) {
-			console.log('will center');
+			LOG('will center');
 			this.centerMap(location);
 			this._followPreviousTime = now;
 		}
