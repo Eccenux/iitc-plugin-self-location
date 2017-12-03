@@ -2,9 +2,9 @@
 // @id             iitc-plugin-self-location@eccenux
 // @name           IITC plugin: Self location
 // @category       Misc
-// @version        0.1.2
+// @version        0.1.3
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    [0.1.2] Self location tracker. Your position on the map. Obviously works best on a mobile device.
+// @description    [0.1.3] Self location tracker. Your position on the map. Obviously works best on a mobile device.
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
@@ -109,6 +109,7 @@ SelfLocation.prototype.config = {
 	},
 	goto : {
 		longpress : 1000,	// [ms] how long is a long press (click/tap)
+		minInterval : 20,	// [s] minimum time elapsed when following. Need to be long enough to allow the map to load.
 		clickedTimeout : 3000,
 		states : {
 			normal: '⌖',
@@ -249,6 +250,11 @@ SelfLocation.prototype.centerMap = function(location) {
 SelfLocation.prototype._followLocation = false;
 
 /**
+ * Last time the map was centered.
+ */
+SelfLocation.prototype._followPreviousTime = 0;
+
+/**
  * Start following user location.
  */
 SelfLocation.prototype.followStart = function() {
@@ -272,7 +278,14 @@ SelfLocation.prototype.follow = function(location) {
 	}
 	// do same filtering as for trace (at least for now)
 	if (this.shouldAddAsTrace(location)) {
-		this.centerMap(location);
+		var now = new Date().getTime();
+		var deltaT = (now - this._followPreviousTime) / 1000;
+		console.log('deltaT: ', deltaT);
+		if (deltaT > this.config.goto.minInterval) {
+			console.log('will center');
+			this.centerMap(location);
+			this._followPreviousTime = now;
+		}
 	}
 };
 
