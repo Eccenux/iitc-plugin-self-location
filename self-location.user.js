@@ -174,7 +174,7 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 		if ($gotoButton.attr('data-state') === 'follow') {
 			$gotoButton.text(states.normal);
 			$gotoButton.attr('data-state', 'normal');
-			this.followEnd();
+			me.followEnd();
 			return;
 		}
 
@@ -209,7 +209,7 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 			if ($gotoButton.attr('data-state') !== 'follow') {
 				$gotoButton.text(states.follow);
 				$gotoButton.attr('data-state', 'follow');
-				this.followStart();
+				me.followStart();
 			}
 		}
 	});
