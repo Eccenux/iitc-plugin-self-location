@@ -2,9 +2,9 @@
 // @id             iitc-plugin-self-location@eccenux
 // @name           IITC plugin: Self location
 // @category       Misc
-// @version        0.1.4
+// @version        0.1.5
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    [0.1.4] Self location tracker. Your position on the map. Obviously works best on a mobile device.
+// @description    [0.1.5] Self location tracker. Your position on the map. Obviously works best on a mobile device.
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
@@ -110,6 +110,7 @@ SelfLocation.prototype.config = {
 	goto : {
 		longpress : 1000,	// [ms] how long is a long press (click/tap)
 		minInterval : 20,	// [s] minimum time elapsed when following. Need to be long enough to allow the map to load.
+		minDistance : 100,	// [m] minimum distance that would move the map
 		clickedTimeout : 3000,
 		states : {
 			normal: '⌖',
@@ -283,11 +284,82 @@ SelfLocation.prototype.follow = function(location) {
 		var deltaT = (now - this._followPreviousTime) / 1000;
 		LOG('deltaT: ', deltaT);
 		if (deltaT > this.config.goto.minInterval) {
-			LOG('will center');
-			this.centerMap(location);
-			this._followPreviousTime = now;
+			var distance = _getDistanceFromCenter(location);
+			LOG('distance: ', distance);
+			if (distance > this.config.goto.minDistance) {
+				LOG('will center');
+				this.centerMap(location);
+				this._followPreviousTime = now;
+			}
 		}
 	}
+};
+
+_getDistanceFromCenter = function(location) {
+	var center = window.map.getCenter();
+	// location to simple object
+	var distance = GeoCalc.distanceAproximation(
+		location.coords.latitude, location.coords.longitude,
+		center.lat, center.lng
+	);
+	return distance;
+};
+
+/**
+ * Geo calculation library (part of it actually).
+ *
+ * @author Chris Veness 2002-2012
+ * @author Maciej Nux Jaros 2013-2014
+ *
+ * Licensed under (at ones choosing)
+ *   <li>MIT License: http://www.opensource.org/licenses/mit-license
+ *   <li>or CC-BY: http://creativecommons.org/licenses/by/3.0/
+ */
+function GeoCalc() {
+}
+
+/**
+ * Converts degrees to radians.
+ * @param {Number} degrees
+ * @returns {Number}
+ */
+GeoCalc.toRad = function(degrees) {
+	return degrees * Math.PI / 180;
+};
+
+/**
+ * Converts radians to degrees.
+ * @param {Number} radians
+ * @returns {Number}
+ */
+GeoCalc.toDeg = function(radians) {
+	return radians * 180 / Math.PI;
+};
+
+/**
+ * Aproximate distance between to points.
+ *
+ * Note! This is rough estimation designed for speed. See:
+ * https://www.movable-type.co.uk/scripts/latlong.html#equirectangular
+ *
+ * @param {Number} lat1 Float in degrees (same for other params).
+ * @param {Number} lon1
+ * @param {Number} lat2
+ * @param {Number} lon2
+ * @returns {Number} Distance in meters.
+ */
+GeoCalc.distanceAproximation = function(lat1, lon1, lat2, lon2) {
+	var R = 6371000;  // radius of the Earth in m
+
+	lat1 = GeoCalc.toRad(lat1);
+	lat2 = GeoCalc.toRad(lat2);
+	lon1 = GeoCalc.toRad(lon1);
+	lon2 = GeoCalc.toRad(lon2);
+
+	var x = (lon2 - lon1) * Math.cos(0.5 * (lat2+lat1));
+	var y = lat2 - lat1;
+	var d = R * Math.sqrt(x*x + y*y);
+	return d;
 };
 
 /**
