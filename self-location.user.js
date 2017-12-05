@@ -229,18 +229,18 @@ SelfLocation.prototype._centerOnNextLocation = false;
  * @param {Position|undefined} location If not provided then will attempt to read from history.
  */
 SelfLocation.prototype.centerMap = function(location) {
-	LOG('centerMap: ', location);
+	//LOG('centerMap: ', location);
 	if (!location) {
 		if (this._locations.length) {
 			location = this._locations[this._locations.length-1];
-			LOG('location from history: ', location);
+			//LOG('location from history: ', location);
 		}
 	}
 	if (location) {
 		var ll = [location.coords.latitude, location.coords.longitude];
 		window.map.setView(ll, window.map.getZoom());
 	} else {
-		LOG('center on next location');
+		//LOG('center on next location');
 		this._centerOnNextLocation = true;
 	}
 };
@@ -278,16 +278,16 @@ SelfLocation.prototype.follow = function(location) {
 		return;
 	}
 	// do same filtering as for trace (at least for now)
-	LOG('follow: ', location);
+	//LOG('follow: ', location);
 	if (this.shouldAddAsTrace(location)) {
 		var now = new Date().getTime();
 		var deltaT = (now - this._followPreviousTime) / 1000;
-		LOG('deltaT: ', deltaT);
+		//console.log(`deltaT: ${deltaT}`);
 		if (deltaT > this.config.goto.minInterval) {
 			var distance = _getDistanceFromCenter(location);
-			LOG('distance: ', distance);
+			//console.log(`distance: ${distance}`);
 			if (distance > this.config.goto.minDistance) {
-				LOG('will center');
+				//console.log('will center');
 				this.centerMap(location);
 				this._followPreviousTime = now;
 			}
