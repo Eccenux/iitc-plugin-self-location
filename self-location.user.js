@@ -2,9 +2,9 @@
 // @id             iitc-plugin-self-location@eccenux
 // @name           IITC plugin: Self location
 // @category       Misc
-// @version        0.1.6
+// @version        0.1.7
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    [0.1.6] Self location tracker. Your position on the map. Obviously works best on a mobile device.
+// @description    [0.1.7] Self location tracker. Your position on the map. Obviously works best on a mobile device.
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
@@ -112,6 +112,7 @@ SelfLocation.prototype.config = {
 		minInterval : 20,	// [s] minimum time elapsed when following. Need to be long enough to allow the map to load.
 		minDistance : 5,	// [%] minimum, relative distance (relative to shorter edge of the map)
 							// should be in 0-50% range
+		minZoom : 9,		// things might break around zoom level 7 (too much of the map visible)
 		clickedTimeout : 3000,
 		states : {
 			normal: '⌖',
@@ -278,6 +279,10 @@ SelfLocation.prototype.follow = function(location) {
 	if (!this._followLocation) {
 		return;
 	}
+	// too large map visible
+	if (window.map.getZoom() < this.config.goto.minZoom) {
+		return;
+	}
 	// do same filtering as for trace (at least for now)
 	//LOG('follow: ', location);
 	if (this.shouldAddAsTrace(location)) {
@@ -285,12 +290,14 @@ SelfLocation.prototype.follow = function(location) {
 		var deltaT = (now - this._followPreviousTime) / 1000;
 		//console.log(`deltaT: ${deltaT}`);
 		if (deltaT > this.config.goto.minInterval) {
+			// reset time even if distance don't qualify to avoid constant re-calc of distance
+			this._followPreviousTime = now;
+
 			var distance = _getRelativeDistance(_getDistanceFromCenter(location));
 			//console.log(`distance: ${distance}`);
 			if (distance > this.config.goto.minDistance) {
 				//console.log('will center');
 				this.centerMap(location);
-				this._followPreviousTime = now;
 			}
 		}
 	}
