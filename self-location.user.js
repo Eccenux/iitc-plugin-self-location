@@ -2,9 +2,9 @@
 // @id             iitc-plugin-self-location@eccenux
 // @name           IITC plugin: Self location
 // @category       Misc
-// @version        0.1.5
+// @version        0.1.6
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    [0.1.5] Self location tracker. Your position on the map. Obviously works best on a mobile device.
+// @description    [0.1.6] Self location tracker. Your position on the map. Obviously works best on a mobile device.
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
@@ -110,7 +110,8 @@ SelfLocation.prototype.config = {
 	goto : {
 		longpress : 1000,	// [ms] how long is a long press (click/tap)
 		minInterval : 20,	// [s] minimum time elapsed when following. Need to be long enough to allow the map to load.
-		minDistance : 100,	// [m] minimum distance that would move the map
+		minDistance : 5,	// [%] minimum, relative distance (relative to shorter edge of the map)
+							// should be in 0-50% range
 		clickedTimeout : 3000,
 		states : {
 			normal: '⌖',
@@ -284,7 +285,7 @@ SelfLocation.prototype.follow = function(location) {
 		var deltaT = (now - this._followPreviousTime) / 1000;
 		//console.log(`deltaT: ${deltaT}`);
 		if (deltaT > this.config.goto.minInterval) {
-			var distance = _getDistanceFromCenter(location);
+			var distance = _getRelativeDistance(_getDistanceFromCenter(location));
 			//console.log(`distance: ${distance}`);
 			if (distance > this.config.goto.minDistance) {
 				//console.log('will center');
@@ -295,7 +296,49 @@ SelfLocation.prototype.follow = function(location) {
 	}
 };
 
-_getDistanceFromCenter = function(location) {
+var _zoomToMapSize = {};
+
+/**
+ * Get aproximate map size for current zoom.
+ *
+ * Note! This returns smallest dimmesion from width and height.
+ */
+var _getMapSize = function() {
+	var zoom = window.map.getZoom();
+	// return from cache
+	if (zoom in _zoomToMapSize) {
+		return _zoomToMapSize[zoom];
+	}
+	// calculate
+	var bounds = window.map.getBounds();
+	var ne = bounds.getNorthEast();
+	var sw = bounds.getSouthWest();
+	var w = GeoCalc.distanceAproximation(
+		ne.lat, ne.lng,
+		ne.lat, sw.lng
+	);
+	var h = GeoCalc.distanceAproximation(
+		ne.lat, ne.lng,
+		sw.lat, ne.lng
+	);
+	var size = Math.min(w, h);
+	// cache
+	_zoomToMapSize[zoom] = size;
+	// finalize
+	return size;
+};
+
+var _getRelativeDistance = function(distance) {
+	var size = _getMapSize();
+	return 100 * distance / size;
+};
+
+/**
+ * Calculate distance from the center of the map.
+ * @param {Object} location Current location.
+ * @returns {Number} Distance in meters from center.
+ */
+var _getDistanceFromCenter = function(location) {
 	var center = window.map.getCenter();
 	// location to simple object
 	var distance = GeoCalc.distanceAproximation(
