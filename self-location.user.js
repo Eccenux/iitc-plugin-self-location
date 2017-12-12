@@ -2,9 +2,9 @@
 // @id             iitc-plugin-self-location@eccenux
 // @name           IITC plugin: Self location
 // @category       Misc
-// @version        0.2.0
+// @version        0.2.1
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    [0.2.0] Self location tracker. Your position on the map. Obviously works best on a mobile device.
+// @description    [0.2.1] Self location tracker. Your position on the map. Obviously works best on a mobile device.
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
@@ -420,22 +420,22 @@ SelfLocation.prototype.setupLocationForDistance = function(location) {
 	var distancePlugin = window.plugin.distanceToPortal;
 	// noplugin bail out
 	if (typeof distancePlugin !== 'function') {
-		console.log('setupLocationForDistance: noplugin');
+		//console.log('setupLocationForDistance: noplugin');
 		return;
 	}
 	// check if already set to anything
 	var alreadySet = false;
 	if (typeof distancePlugin.currentLoc === 'object' && distancePlugin.currentLoc !== null) {
-		console.log('setupLocationForDistance: already set');
+		//console.log('setupLocationForDistance: already set');
 		alreadySet = true;
 	}
 	// if not accurate enough or don't change much then don't bother
 	if (alreadySet && !this.shouldAddAsTrace(location)) {
-		console.log(`setupLocationForDistance: don't change`);
+		//console.log(`setupLocationForDistance: don't change`);
 		return;
 	}
 	// should make sens to change the location now
-	console.log(`setupLocationForDistance: changing`);
+	//console.log(`setupLocationForDistance: changing`);
 	distancePlugin.currentLoc = L.latLng({
 		"lat":location.coords.latitude,
 		"lng":location.coords.longitude
