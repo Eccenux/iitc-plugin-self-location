@@ -25,9 +25,15 @@ Note that your location is on a separate layer. So you can temporarily hide your
 
 To go to your current location tap on the location button (left sidebar `⌖`). This will put you in the middle of the map.
 
-[TODO] To start a constant tracing mode tap and hold the button (about 2 seconds). When your location changes the map will move with you. Depending on your zoom level and location accuracy this might be every few meters or more.
+To start a constant tracing mode tap and hold the button (about 2 seconds). When your location changes the map will move with you. Depending on your zoom level and location accuracy this might be every few meters or more.
 
 The location button icon will change depending on your current mode. It will also change briefly when clicked. 
+
+### Distance to portal ###
+
+This plugin integrates with the [Distance to portal plugin](https://iitc.me/desktop/#plugin-distance-to-portal). Obviously you need to install it, but integration is done automatically. Once your location is read from your device it will be made available to the distance plugin.
+
+After initial setup the location will only be updated if it is more accurate. If you are walking outside then the distance on a portal card should be accurate up to 10 meters. However distance is calculated only when you open the portal card. You would have to reopen the portal card to see updated distance.
 
 Privacy
 -------
