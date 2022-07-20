@@ -2,9 +2,9 @@
 // @id             iitc-plugin-self-location@eccenux
 // @name           IITC plugin: Self location
 // @category       Misc
-// @version        0.2.2
+// @version        0.3.0
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    [0.2.2] Self location tracker. Your position on the map. Obviously works best on a mobile device.
+// @description    [0.3.0] Self location tracker. Your position on the map. Obviously works best on a mobile device.
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
@@ -146,14 +146,69 @@ SelfLocation.prototype.setupDraw = function() {
 	window.addLayerGroup('Agent (self) location', this._drawLayer, true);
 };
 
+// copy from main intel with link styles changed to button
+SelfLocation.prototype.css = `
+.leaflet-bar .btn,
+.leaflet-bar .btn:hover {
+ background-color: #fff;
+ border-bottom: 1px solid #ccc;
+ width: 26px;
+ height: 26px;
+ line-height: 26px;
+ display: block;
+ text-align: center;
+ text-decoration: none;
+ color: black;
+}
+.leaflet-bar .btn
+{
+ background-position: 50% 50%;
+ background-repeat: no-repeat;
+ display: block;
+}
+.leaflet-bar .btn:hover {
+ background-color: #f4f4f4;
+}
+.leaflet-bar .btn:first-child {
+ border-top-left-radius: 4px;
+ border-top-right-radius: 4px;
+}
+.leaflet-bar .btn:last-child {
+ border-bottom-left-radius: 4px;
+ border-bottom-right-radius: 4px;
+ border-bottom: none;
+}
+.leaflet-bar .btn.leaflet-disabled {
+ cursor: default;
+ background-color: #f4f4f4;
+ color: #bbb;
+}
+.leaflet-touch .leaflet-bar .btn {
+ width: 30px;
+ height: 30px;
+ line-height: 30px;
+}
+.leaflet-touch .leaflet-bar .btn:first-child {
+ border-top-left-radius: 2px;
+ border-top-right-radius: 2px;
+}
+.leaflet-touch .leaflet-bar .btn:last-child {
+ border-bottom-left-radius: 2px;
+ border-bottom-right-radius: 2px;
+}
+`;
+
 /**
  * Setup always visible content.
  */
 SelfLocation.prototype.setupContent = function() {
 	// leaflet (sidebar buttons)
 	$('.leaflet-control-container .leaflet-top.leaflet-left').append(`
+		<style>
+		${this.css}
+		</style>
 		<div class="leaflet-control-selfLocation leaflet-bar leaflet-control">
-			<a href="#" id="selfLocation-goto-button" data-state="normal" title="go to current location">${this.config.goto.states.normal}</a>
+			<button id="selfLocation-goto-button" class="btn" data-state="normal" title="go to current location">${this.config.goto.states.normal}</button>
 		</div>
 	`);
 
