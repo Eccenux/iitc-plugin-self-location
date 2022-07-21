@@ -262,13 +262,15 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 		// restart watch and center map
 		if (me._watchId == null) {
 			LOGwarn('Restart attempt...');
+			me.toastMessage('Position lost. Restarting...', 10);
 			me.setupWatch(true, function(){
+				me.toastMessage('Position lost. Restarted.', 1);
 				me.centerMap();
 			});
 		} else {
 			me.centerMap();
 			if (firstTime) {
-				alert('Centered map. Long press the location button to follow your position.');
+				me.toastMessage('Centered map. Long press the button to follow your position.', 15);
 				firstTime = false;
 			}
 		}
@@ -294,12 +296,46 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 				$gotoButton.text(states.follow);
 				$gotoButton.attr('data-state', 'follow');
 				me.followStart();
-				alert('Following location. Tap again to stop following.');
+				me.toastMessage('Following location.', 3);
 			}
 		}
 	}
 	
 	this.$gotoButton = $gotoButton;
+};
+
+/** Toast message on the right of $element. */
+SelfLocation.prototype.toastMessage = function(shortMessage, fade, $el) {
+	if (!$el) {
+		$el = $('#selfLocation-goto-button');
+	}
+	const id = 'SelfLocation-toast';
+	const margin = 20;	// px
+	const destructionTime = (typeof fade === 'number' ? fade : 10);	// seconds
+	
+	const pos = $el.offset();
+	pos.left += $el.width() + margin;
+
+	$(`#${id}`).remove();
+	$('body').append(`
+		<div
+			id="${id}"
+			class="ui-tooltip ui-corner-all ui-widget-shadow ui-widget ui-widget-content"
+			style="top: ${pos.top}px; left: ${pos.left}px;"
+		>
+		<div class="ui-tooltip-content">
+			${shortMessage}
+		</div>
+		</div>
+	`);
+
+	// self destruct
+	if (this.destructionId) {
+		clearTimeout(this.destructionId);
+	}
+	this.destructionId = setTimeout(function () {
+		$(`#${id}`).fadeOut("slow", function() {});
+	}, destructionTime * 1000);
 };
 
 /**
