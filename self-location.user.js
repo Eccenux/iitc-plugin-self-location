@@ -2,9 +2,9 @@
 // @id             iitc-plugin-self-location@eccenux
 // @name           IITC plugin: Self location
 // @category       Misc
-// @version        0.3.0
+// @version        1.0.0
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    [0.3.0] Self location tracker. Your position on the map. Obviously works best on a mobile device.
+// @description    [1.0.0] Self location tracker. Your position on the map. Obviously works best on a mobile device.
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
@@ -148,6 +148,12 @@ SelfLocation.prototype.setupDraw = function() {
 
 // copy from main intel with link styles changed to button
 SelfLocation.prototype.css = `
+.leaflet-bar .btn {
+	border: 0px solid white;
+	padding: 0;
+	margin: 0;
+}
+
 .leaflet-bar .btn,
 .leaflet-bar .btn:hover {
  background-color: #fff;
@@ -208,7 +214,8 @@ SelfLocation.prototype.setupContent = function() {
 		${this.css}
 		</style>
 		<div class="leaflet-control-selfLocation leaflet-bar leaflet-control">
-			<button id="selfLocation-goto-button" class="btn" data-state="normal" title="go to current location">${this.config.goto.states.normal}</button>
+			<button id="selfLocation-goto-button" class="btn" data-state="normal" 
+				>${this.config.goto.states.normal}</button>
 		</div>
 	`);
 
@@ -224,6 +231,8 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 	var me = this;
 	var states = this.config.goto.states;
 
+	var firstTime = true;
+
 	// standard click
 	var clickedTimerId = null;
 	var clickedTimeout = this.config.goto.clickedTimeout;
@@ -238,9 +247,6 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 			return;
 		}
 
-		// center map
-		me.centerMap();
-		
 		// clicked feedback
 		$gotoButton.text(states.clicked);
 		// revert to normal
@@ -252,6 +258,20 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 				$gotoButton.text(states.normal);
 			}
 		}, clickedTimeout);
+
+		// restart watch and center map
+		if (me._watchId == null) {
+			LOGwarn('Restart attempt...');
+			me.setupWatch(true, function(){
+				me.centerMap();
+			});
+		} else {
+			me.centerMap();
+			if (firstTime) {
+				alert('Centered map. Long press the location button to follow your position.');
+				firstTime = false;
+			}
+		}
 	});
 
 	// longpress
@@ -259,20 +279,25 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 	var start = 0;
 	$gotoButton.on('touchstart', function() {
 		start = new Date().getTime();
-		LOG('touchstart');
+	});
+	$gotoButton.on('touchmove', function() {
+		finalize();
 	});
 	$gotoButton.on('touchend', function() {
+		finalize();
+	});
+	function finalize() {
 		var deltaT = new Date().getTime() - start;
-		LOG('touchend', deltaT);
 		if (deltaT >= longpress) {
 			// start following location
 			if ($gotoButton.attr('data-state') !== 'follow') {
 				$gotoButton.text(states.follow);
 				$gotoButton.attr('data-state', 'follow');
 				me.followStart();
+				alert('Following location. Tap again to stop following.');
 			}
 		}
-	});
+	}
 	
 	this.$gotoButton = $gotoButton;
 };
@@ -650,14 +675,42 @@ SelfLocation.prototype.createMarker = function(location, isCurrent) {
 
 /**
  * Setup location watch.
+ * 
+ * @param {Boolean?} userAction If true then re-setup after user action.
+ * @param {Function?} callback Success callback.
  */
-SelfLocation.prototype.setupWatch = function() {
+SelfLocation.prototype.setupWatch = function(userAction, callback) {
 	var me = this;
 	function success(location) {
 		me.receiver(location);
+		const accuracy = location.coords.accuracy;
+		if (accuracy > 200) {
+			LOGwarn('Note! Very low accuracy in coordinates: '+ accuracy);
+			// brake watch (might be a temporary bug in FF)
+			navigator.geolocation.clearWatch(me._watchId);
+			me._watchId = null;
+		}
+		else if (accuracy > 20) {
+			LOGwarn('Low accuracy in coordinates: '+ accuracy);
+		}
+		if (typeof callback == 'function') {
+			callback(location.coords);
+		}
 	}
 	function error(err) {
 		LOGwarn('location error(' + err.code + '): ' + err.message);
+		// brake watch
+		navigator.geolocation.clearWatch(me._watchId);
+		me._watchId = null;
+		if (userAction) {
+			// probably Fox fo Android
+			if (navigator.userAgent.search(/mobile.+firefox/i)) {
+				var info = 'Please make sure location is enabled for the intel page (check lock icon in Firefox). Also check your app permissions.';
+			} else {
+				var info = 'Please make sure location is enabled for the application and in your system.';
+			}
+			alert(`Unable to get location (code: ${err.code}). \n\n${info}`);
+		}
 	}
 	// see: https://developer.mozilla.org/en-US/docs/Web/API/PositionOptions
 	var options = {
