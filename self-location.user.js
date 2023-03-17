@@ -30,7 +30,8 @@ function SelfLocation() {
  * Initial initialization of the plugin.
  */
 SelfLocation.prototype.init = function() {
-	this.setupWatch();
+	// seems like maybe Firefox/Android doesn't like when you setup watch on load
+	//this.setupWatch();
 	this.setupDraw();
 	this.setupContent();
 };
@@ -725,7 +726,7 @@ SelfLocation.prototype.setupWatch = function(userAction, callback) {
 		me.receiver(location);
 		const accuracy = location.coords.accuracy;
 		if (accuracy > 200) {
-			LOGwarn('Note! Very low accuracy in coordinates: '+ accuracy);
+			LOGwarn(`Note! Very low accuracy in coordinates: ${accuracy}. Will stop watching locations.`);
 			// brake watch (might be a temporary bug in FF)
 			navigator.geolocation.clearWatch(me._watchId);
 			me._watchId = null;
