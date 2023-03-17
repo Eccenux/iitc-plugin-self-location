@@ -2,9 +2,9 @@
 // @id             iitc-plugin-self-location@eccenux
 // @name           IITC plugin: Self location
 // @category       Misc
-// @version        1.0.0
+// @version        1.1.0
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    [1.0.0] Self location tracker. Your position on the map. Obviously works best on a mobile device.
+// @description    [1.1.0] Self location tracker. Your position on the map. Obviously works best on a mobile device.
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
@@ -258,11 +258,17 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 
 		// restart watch and center map
 		if (me._watchId == null) {
-			LOGwarn('Restart attempt...');
-			me.toastMessage('Position lost. Restarting...', 10);
+			LOGwarn('Restart attempt...; following: ', me._followLocation);
+			// less verbose when not following
+			if (me._followLocation) {
+				me.toastMessage('Position lost. Restarting...', 10);
+			}
 			me.setupWatch(true, function(){
-				me.toastMessage('Position lost. Restarted.', 1);
-				me.centerMap();
+				// only center when following
+				if (me._followLocation) {
+					me.toastMessage('Position lost. Restarted.', 1);
+					me.centerMap();
+				}
 			});
 		} else {
 			me.centerMap();
@@ -725,7 +731,7 @@ SelfLocation.prototype.setupWatch = function(userAction, callback) {
 			me._watchId = null;
 		}
 		else if (accuracy > 20) {
-			LOGwarn('Low accuracy in coordinates: '+ accuracy);
+			LOG('Low accuracy in coordinates: '+ accuracy);
 		}
 		if (typeof callback == 'function') {
 			callback(location.coords);
