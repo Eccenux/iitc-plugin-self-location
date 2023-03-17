@@ -2,9 +2,9 @@
 // @id             iitc-plugin-self-location@eccenux
 // @name           IITC plugin: Self location
 // @category       Misc
-// @version        1.1.1
+// @version        1.1.2
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    [1.1.1] Self location tracker. Your position on the map. Obviously works best on a mobile device.
+// @description    [1.1.2] Self location tracker. Your position on the map. Obviously works best on a mobile device.
 // @match          https://*.ingress.com/intel*
 // @match          http://*.ingress.com/intel*
 // @match          https://*.ingress.com/mission/*
@@ -225,7 +225,13 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 	var me = this;
 	var states = this.config.goto.states;
 
-	var firstTime = true;
+	var firstTimeInfo = true;
+	function clickInfo() {
+		if (firstTimeInfo) {
+			me.toastMessage('Centered map. Long press the button to follow your position.', 15);
+			firstTimeInfo = false;
+		}
+	}
 
 	// standard click
 	var clickedTimerId = null;
@@ -260,23 +266,22 @@ SelfLocation.prototype.preapreGotoEvents = function($gotoButton) {
 			if (me._followLocation) {
 				me.toastMessage('Position lost. Restarting...', 10);
 			}
+			// note, callback is called each time after starting watch
+			var afterClick = true;
 			me.setupWatch(true, function(){
-				// only center when following
+				// center when following (or 1st time after click)
 				if (me._followLocation) {
 					me.toastMessage('Position lost. Restarted.', 1);
 					me.centerMap();
-				} else if (firstTime) {
+				} else if (afterClick) {
 					me.centerMap();
-					me.toastMessage('Centered map. Long press the button to follow your position.', 15);
-					firstTime = false;
+					clickInfo();
 				}
+				afterClick = false;
 			});
 		} else {
 			me.centerMap();
-			if (firstTime) {
-				me.toastMessage('Centered map. Long press the button to follow your position.', 15);
-				firstTime = false;
-			}
+			clickInfo();
 		}
 	});
 
@@ -737,6 +742,7 @@ SelfLocation.prototype.setupWatch = function(userAction, callback) {
 		if (typeof callback == 'function') {
 			callback(location.coords);
 		}
+		userAction = false;
 	}
 	function error(err) {
 		LOGwarn('location error(' + err.code + '): ' + err.message);
@@ -753,6 +759,7 @@ SelfLocation.prototype.setupWatch = function(userAction, callback) {
 			}
 			alert(`Unable to get location (code: ${err.code}). \n\n${info}`);
 		}
+		userAction = false;
 	}
 	// see: https://developer.mozilla.org/en-US/docs/Web/API/PositionOptions
 	var options = {
