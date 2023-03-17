@@ -19,12 +19,8 @@
 // @downloadURL    https://github.com/Eccenux/iitc-plugin-self-location/raw/master/self-location.user.js
 // ==/UserScript==
 
-function wrapper(plugin_info) {
-// ensure plugin framework is there, even if iitc is not yet loaded
-if(typeof window.plugin !== 'function') window.plugin = function() {};
-
-
-//PLUGIN START ////////////////////////////////////////////////////////
+/* global GM_info, $ */
+/* global L,PLAYER,unixTimeToString */
 
 /**
  * Main class of the plugin.
@@ -46,6 +42,7 @@ SelfLocation.prototype.init = function() {
 /**
  * Very simple logger.
  */
+// eslint-disable-next-line no-unused-vars
 function LOG() {
 	var args = Array.prototype.slice.call(arguments); // Make real array from arguments
 	args.unshift("[selfLocation] ");
@@ -112,7 +109,7 @@ SelfLocation.prototype.config = {
 		longpress : 1000,	// [ms] how long is a long press (click/tap)
 		minInterval : 20,	// [s] minimum time elapsed when following. Need to be long enough to allow the map to load.
 		minDistance : 5,	// [%] minimum, relative distance (relative to shorter edge of the map)
-							// should be in 0-50% range
+		//                     should be in 0-50% range
 		minZoom : 9,		// things might break around zoom level 7 (too much of the map visible)
 		clickedTimeout : 3000,
 		states : {
@@ -599,15 +596,15 @@ SelfLocation.prototype.logLocation = function(location) {
  */
 SelfLocation.prototype.dump = function() {
 	// dump-able locations array
-	var locations = this._locations.map(function(location){
+	var locations = this._locations.map(function (location) {
 		return {
-				ll: {
-					latitude: location.coords.latitude,
-					longitude: location.coords.longitude
-				},
-				accuracy: location.coords.accuracy,
-				speed: location.coords.speed,
-				timestamp: location.timestamp
+			ll: {
+				latitude: location.coords.latitude,
+				longitude: location.coords.longitude
+			},
+			accuracy: location.coords.accuracy,
+			speed: location.coords.speed,
+			timestamp: location.timestamp
 		};
 	});
 
@@ -685,14 +682,15 @@ SelfLocation.prototype.updateTrace = function(location) {
 SelfLocation.prototype.createMarker = function(location, isCurrent) {
 	var accuracy = location.coords.accuracy;
 	var ll = [location.coords.latitude, location.coords.longitude];
+	var radius, fillColor;
 	// current
 	if (isCurrent) {
-		var radius = (accuracy > 50 ? 50 : (accuracy < 5 ? 5 : accuracy)); // in meters
-		var fillColor = (PLAYER.team === 'ENLIGHTENED') ? 'green' : 'blue';
+		radius = (accuracy > 50 ? 50 : (accuracy < 5 ? 5 : accuracy)); // in meters
+		fillColor = (PLAYER.team === 'ENLIGHTENED') ? 'green' : 'blue';
 	// trace
 	} else {
-		var radius = 5;
-		var fillColor = 'red';
+		radius = 5;
+		fillColor = 'red';
 	}
 	return L.circleMarker(ll,
 		{
@@ -740,10 +738,11 @@ SelfLocation.prototype.setupWatch = function(userAction, callback) {
 		me._watchId = null;
 		if (userAction) {
 			// probably Fox fo Android
+			var info;
 			if (navigator.userAgent.search(/mobile.+firefox/i)) {
-				var info = 'Please make sure location is enabled for the intel page (check lock icon in Firefox). Also check your app permissions.';
+				info = 'Please make sure location is enabled for the intel page (check lock icon in Firefox). Also check your app permissions.';
 			} else {
-				var info = 'Please make sure location is enabled for the application and in your system.';
+				info = 'Please make sure location is enabled for the application and in your system.';
 			}
 			alert(`Unable to get location (code: ${err.code}). \n\n${info}`);
 		}
@@ -757,21 +756,22 @@ SelfLocation.prototype.setupWatch = function(userAction, callback) {
 	this._watchId = navigator.geolocation.watchPosition(success, error, options);
 };
 
-//PLUGIN SETUP //////////////////////////////////////////////////////////
 
+// ensure plugin framework is there, even if iitc is not yet loaded
+if(typeof window.plugin !== 'function') window.plugin = function() {};
 window.plugin.selfLocation = new SelfLocation();
-var setup = function() {
-	window.plugin.selfLocation.init();
-};
 
-//PLUGIN END //////////////////////////////////////////////////////////
+//PLUGIN SETUP //////////////////////////////////////////////////////////
+function wrapper(plugin_info) {
+	var setup = function() {
+		window.plugin.selfLocation.init();
+	};
 
-
-setup.info = plugin_info; //add the script info data to the function as a property
-if(!window.bootPlugins) window.bootPlugins = [];
-window.bootPlugins.push(setup);
-// if IITC has already booted, immediately run the 'setup' function
-if(window.iitcLoaded && typeof setup === 'function') setup();
+	setup.info = plugin_info; //add the script info data to the function as a property
+	if(!window.bootPlugins) window.bootPlugins = [];
+	window.bootPlugins.push(setup);
+	// if IITC has already booted, immediately run the 'setup' function
+	if(window.iitcLoaded && typeof setup === 'function') setup();
 } // wrapper end
 // inject code into site context
 var script = document.createElement('script');
